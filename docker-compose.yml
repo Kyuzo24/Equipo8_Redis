@@ -1,0 +1,28 @@
+services:
+  redis:
+    image: redis:7
+    container_name: redis-exp1
+    # Redis SIN persistencia (sin RDB ni AOF) para que no afecte las mediciones
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  experimento:
+    build: .
+    container_name: python-exp1
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - REDIS_HOST=redis
+    volumes:
+      - ./data:/app/data
+      - ./scripts:/app/scripts
+      - ./resultados:/app/resultados
+    # Se queda encendido esperando que le enviemos comandos
+    command: ["sleep", "infinity"]
